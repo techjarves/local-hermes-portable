@@ -164,12 +164,13 @@ if exist "%PROJECT_ROOT%\llama\windows\bin\llmfit.zip" (
 
 rem 2c. Check if llama-server supports --cache-ssd option
 set "CACHE_ARG="
-if exist "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" (
-    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" --help 2>&1 | findstr /C:"--cache-ssd" >nul
-    if %ERRORLEVEL% equ 0 (
-        set CACHE_ARG=--cache-ssd "%PROJECT_ROOT%\llama\kv-cache"
-    )
+if not exist "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" goto :skip_cache_check
+"%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" --help 2>&1 | findstr /C:"--cache-ssd" >nul
+if %ERRORLEVEL% equ 0 (
+    set CACHE_ARG=--cache-ssd "%PROJECT_ROOT%\llama\kv-cache"
 )
+:skip_cache_check
+
 
 
 rem 3. Handle specific launcher-integrated commands

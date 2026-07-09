@@ -1,0 +1,56 @@
+# Dependencies (downloaded from AMD nightlies)
+deps/
+
+# ROCm SDK (alternative location)
+rocm/
+
+# Build output
+llama/src/*/build/
+llama/CachyLLama/build/
+llama/CachyLLama/build_temp/
+
+# Llama.cpp source (managed as git submodules)
+
+# Python venv (if using)
+# venv/
+
+# Model files (large, not in repo)
+models/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+llama/benchmarks/
+wget-log*
+debug.log
+
+# Download artifacts
+*.tar.gz
+*.zip
+
+# CLIO (managed automatically)
+.clio/
+patches-archive/
+llama/kv-cache/
+llama/ssd-cache/
+
+# Transient
+patches/
+llama/scratch/
+
+# Portable runtimes and compiled binaries
+llama/mac/
+llama/linux/
+llama/windows/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store

@@ -1,0 +1,57 @@
+# llama-ai
+
+> Local LLM inference on AMD APU hardware using llama.cpp. Self-contained - no system ROCm install required. Vulkan (RADV) is the default backend for best stability on RDNA3 iGPUs.
+
+## Why
+
+Agentic AI development on an Ayaneo Flip KB (7840U / 32GB) handheld - usable offline. No API keys, no per-token costs. Cached state survives reboots and power outages. CLIO is optimized for this implementation to maximize cache reuse across agentic turns.
+
+## Quick start
+
+```bash
+git clone --recurse-submodules https://github.com/fewtarius/llama-ai.git
+cd llama-ai
+./scripts/rebuild.sh
+./llama-run.sh --server  # http://localhost:9090
+```
+
+## Key features
+
+- SSD-backed KV cache with hot/warm/cold tiering (persists across server restarts)
+- Hybrid MoE model fixes (Qwen3.5/3.6) - 13 patches for checkpoint restore correctness
+- Auto GPU detection for AMD APUs (Cezanne through Strix Halo)
+- GTT memory configuration via kernel parameters
+- CLIO integration with deterministic JSON serialization for cache reuse
+- Benchmarking with full TTFT (Time To First Token) measurement
+
+## Benchmark results (Ayaneo Flip KB, Vulkan)
+
+| Model | Large TTFT (cold) | Large TTFT (warm) | Speedup | Gen TPS |
+|-------|-------------------|-------------------|---------|---------|
+| GLM-4.7-Flash | 452.9s (7.5min) | 2.9s | 154.6x | 6.5 |
+| Gemma 4 26B | 138.9s (2.3min) | 1.3s | 104.8x | 15.7 |
+| Qwen3.5-27B | 391.5s (6.5min) | 2.9s | 134.2x | 4.1 |
+| Qwen3.6-35B | 125.0s (2.1min) | 1.0s | 130.3x | 21.2 |
+
+Full data with server logs: benchmarks/20260508-2002/
+
+## Structure
+
+- `llama-run.sh` - Main entry point (model detection, server launch)
+- `scripts/rebuild.sh` - Build (Vulkan default, optional ROCm)
+- `scripts/detect-gpu.sh` - AMD GPU auto-detection
+- `scripts/benchmark.sh` - SSD prompt cache performance testing
+- `CachyLLama/` - Submodule (fork of ggml-org/llama.cpp with custom changes)
+- `patches/` - Incremental patches on top of upstream
+- `kv-cache/` - SSD-backed KV cache directory
+
+## Documentation
+
+- README.md - Full documentation with benchmark details and methodology
+- AGENTS.md - Technical reference for AI agents working on this project
+- .clio/instructions.md - CLIO project instructions
+
+## License
+
+Source code: GPL-3.0-or-later
+Documentation: CC-BY-NC-SA-4.0

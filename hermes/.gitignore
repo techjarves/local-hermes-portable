@@ -1,0 +1,6 @@
+# Ignore runtime cache and user data
+data/
+.cache/
+src/
+*.flag
+*.log

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 fewtarius
+[Unit]
+Description=Llama.cpp API Server (llama-run)
+Documentation=https://github.com/ggml-org/llama.cpp
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/deck/llama-ai
+ExecStart=/home/deck/llama-ai/llama-run.sh \
+    --model Qwen3.6-35B-A3B-UD-Q4_K_XL \
+    --server \
+    --backend vulkan \
+    --checkpoint-every-n-tokens 512 \
+    --ctx-checkpoints 64
+
+Restart=on-failure
+RestartSec=10
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Resource limits
+LimitNOFILE=65536
+LimitMEMLOCK=infinity
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=llama-server
+
+[Install]
+WantedBy=default.target

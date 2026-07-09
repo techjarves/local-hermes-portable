@@ -201,6 +201,9 @@ detect_status() {
     if [ -f "$HERMES_HOME/config.yaml" ]; then
         PROVIDER_NAME=$(grep '^  provider:' "$HERMES_HOME/config.yaml" | head -n 1 | awk '{print $2}' || true)
         MODEL_NAME=$(grep '^  default:' "$HERMES_HOME/config.yaml" | head -n 1 | awk '{print $2}' || true)
+        if [ -n "$MODEL_NAME" ]; then
+            MODEL_NAME=$(basename "$MODEL_NAME" .gguf)
+        fi
     fi
 
     GATEWAY_STATUS="Stopped"

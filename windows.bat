@@ -2,6 +2,11 @@
 rem windows.bat - Windows Launcher for llama-ai portable setup
 rem Usage: windows.bat [args]
 
+if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
+if not defined LLAMA_CTX_SIZE set LLAMA_CTX_SIZE=65536
+if not defined LLAMA_SLOTS set LLAMA_SLOTS=1
+if not defined LLAMA_GPU_LAYERS set LLAMA_GPU_LAYERS=99
+
 set SCRIPT_DIR=%~dp0
 set PROJECT_ROOT=%SCRIPT_DIR%
 if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
@@ -230,19 +235,20 @@ echo.
 echo No local GGUF models found. Starting server in router mode to allow downloads...
 
 REM Start server in router mode and auto-launch browser
-set AUTO_LAUNCH_BROWSER=false
+if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
 set PATH=%PROJECT_ROOT%\llama\windows\python;%PROJECT_ROOT%\llama\windows\python\Scripts;%PATH%
 where bash >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     bash "%PROJECT_ROOT%\scripts\llama-run.sh" --server
 ) else (
-    start http://localhost:9090
+    taskkill /F /IM llama-server.exe 2>nul
     taskkill /F /IM llmfit.exe 2>nul
     if exist "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" (
         start "" /B "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" serve --port 8787
     )
-    echo Running llama-server on http://localhost:9090...
-    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
+    start /B "" "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\llama\windows\wait-server.py" 9090 %AUTO_LAUNCH_BROWSER%
+    echo Starting server on http://localhost:9090...
+    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -c %LLAMA_CTX_SIZE% -np %LLAMA_SLOTS% -ngl %LLAMA_GPU_LAYERS% --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
 )
 exit /b 0
 
@@ -291,19 +297,20 @@ echo Starting server with model: !DEFAULT_MODEL_NAME!
 REM Set variables for outside the local block
 endlocal & set "DEFAULT_MODEL=%DEFAULT_MODEL%" & set "DEFAULT_MODEL_NAME=%DEFAULT_MODEL_NAME%"
 
-set AUTO_LAUNCH_BROWSER=false
+if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
 set PATH=%PROJECT_ROOT%\llama\windows\python;%PROJECT_ROOT%\llama\windows\python\Scripts;%PATH%
 where bash >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     bash "%PROJECT_ROOT%\scripts\llama-run.sh" --server -m "%DEFAULT_MODEL%"
 ) else (
-    start http://localhost:9090
+    taskkill /F /IM llama-server.exe 2>nul
     taskkill /F /IM llmfit.exe 2>nul
     if exist "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" (
         start "" /B "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" serve --port 8787
     )
-    echo Running llama-server on http://localhost:9090...
-    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -m "%DEFAULT_MODEL%" --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
+    start /B "" "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\llama\windows\wait-server.py" 9090 %AUTO_LAUNCH_BROWSER% "%DEFAULT_MODEL%"
+    echo Starting server on http://localhost:9090...
+    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -m "%DEFAULT_MODEL%" -c %LLAMA_CTX_SIZE% -np %LLAMA_SLOTS% -ngl %LLAMA_GPU_LAYERS% --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
 )
 exit /b 0
 
@@ -348,10 +355,12 @@ if %ERRORLEVEL% equ 0 (
         exit /b 1
     )
 
+    taskkill /F /IM llama-server.exe 2>nul
     taskkill /F /IM llmfit.exe 2>nul
     if exist "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" (
         start "" /B "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" serve --port 8787
     )
-    echo Running llama-server on http://127.0.0.1:9090...
-    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -m "models\%MODEL_NAME%.gguf" --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
+    start /B "" "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\llama\windows\wait-server.py" 9090 %AUTO_LAUNCH_BROWSER% "%PROJECT_ROOT%\models\%MODEL_NAME%.gguf"
+    echo Starting server on http://localhost:9090...
+    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -m "models\%MODEL_NAME%.gguf" -c %LLAMA_CTX_SIZE% -np %LLAMA_SLOTS% -ngl %LLAMA_GPU_LAYERS% --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
 )

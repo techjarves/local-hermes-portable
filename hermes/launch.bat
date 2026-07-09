@@ -133,11 +133,19 @@ if exist "%HERMES_HOME%\.env" (
 )
 
 if exist "%HERMES_HOME%\config.yaml" (
-    for /f "usebackq tokens=2 delims=: " %%a in (`findstr /R /C:"^  provider:" "%HERMES_HOME%\config.yaml"`) do (
-        if not defined PROVIDER_NAME set "PROVIDER_NAME=%%a"
+    for /f "usebackq tokens=1,* delims=:" %%a in (`findstr /R /C:"^  provider:" "%HERMES_HOME%\config.yaml"`) do (
+        set "val=%%b"
+        if "!val:~0,1!"==" " set "val=!val:~1!"
+        if not defined PROVIDER_NAME set "PROVIDER_NAME=!val!"
     )
-    for /f "usebackq tokens=2 delims=: " %%a in (`findstr /R /C:"^  default:" "%HERMES_HOME%\config.yaml"`) do (
-        if not defined MODEL_NAME set "MODEL_NAME=%%a"
+    for /f "usebackq tokens=1,* delims=:" %%a in (`findstr /R /C:"^  default:" "%HERMES_HOME%\config.yaml"`) do (
+        set "val=%%b"
+        if "!val:~0,1!"==" " set "val=!val:~1!"
+        if not defined MODEL_NAME (
+            set "MODEL_NAME=!val!"
+            set "temp_path=!MODEL_NAME:/=\!"
+            for %%F in ("!temp_path!") do set "MODEL_NAME=%%~nF"
+        )
     )
 )
 

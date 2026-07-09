@@ -46,7 +46,9 @@ llama/scratch/
 # Portable runtimes and compiled binaries
 llama/mac/
 llama/linux/
-llama/windows/
+llama/windows/*
+!llama/windows/*.ps1
+!llama/windows/*.py
 
 # Python cache
 __pycache__/

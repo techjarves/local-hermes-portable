@@ -5,7 +5,7 @@ rem Usage: windows.bat [args]
 set SCRIPT_DIR=%~dp0
 set PROJECT_ROOT=%SCRIPT_DIR%
 if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
-
+if not exist "%PROJECT_ROOT%\models" mkdir "%PROJECT_ROOT%\models"
 echo === llama-ai Windows Portable Setup ^& Launcher ===
 
 rem 1. Setup Portable Python
@@ -205,8 +205,6 @@ for %%f in ("%PROJECT_ROOT%\models\*.gguf") do (
     set "LAST_MODEL=%%f"
 )
 
-if "%GGUF_COUNT%"=="0" goto action_prompt_downloader
-
 echo.
 echo Choose an action:
 echo 1] Start Chat Server and Web UI [default]
@@ -215,22 +213,20 @@ echo 3] Start Hermes Agent
 echo 4] Quit
 set /p choice="Select option [1]: "
 if "%choice%"=="" set choice=1
-if "%choice%"=="1" goto action_start_default
+if "%choice%"=="1" (
+    if "%GGUF_COUNT%"=="0" (
+        goto action_prompt_downloader
+    ) else (
+        goto action_start_default
+    )
+)
 if "%choice%"=="2" goto action_llmfit
 if "%choice%"=="3" goto action_hermes
 exit /b 0
 
 :action_prompt_downloader
 echo.
-echo No local GGUF models found in models\ directory.
-set /p download_choice="Would you like to start the server and open the Web UI in your browser to download models? [Y/n]: "
-if /I "%download_choice%"=="n" (
-    echo.
-    echo To run hardware recommendation: windows.bat --recommend
-    echo To run interactive model browser: windows.bat --fit-tui
-    echo To list launcher options: windows.bat --help
-    exit /b 0
-)
+echo No local GGUF models found. Starting server in router mode to allow downloads...
 
 REM Start server in router mode and auto-launch browser
 set AUTO_LAUNCH_BROWSER=false

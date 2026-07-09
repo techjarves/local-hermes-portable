@@ -234,7 +234,27 @@ else
   else
     echo "        Already extracted — skipping."
   fi
-  [ -d "$RUNTIME_DIR/node/bin" ] && done_msg "Node.js ready"
+  
+  # Fix npm, npx, and corepack wrappers which break when cp -L copies them as regular files
+  if [ -d "$RUNTIME_DIR/node/bin" ]; then
+    cat << 'EOF' > "$RUNTIME_DIR/node/bin/npm"
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$SCRIPT_DIR/node" "$SCRIPT_DIR/../lib/node_modules/npm/bin/npm-cli.js" "$@"
+EOF
+    cat << 'EOF' > "$RUNTIME_DIR/node/bin/npx"
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$SCRIPT_DIR/node" "$SCRIPT_DIR/../lib/node_modules/npm/bin/npx-cli.js" "$@"
+EOF
+    cat << 'EOF' > "$RUNTIME_DIR/node/bin/corepack"
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$SCRIPT_DIR/node" "$SCRIPT_DIR/../lib/node_modules/corepack/dist/corepack.js" "$@"
+EOF
+    chmod +x "$RUNTIME_DIR/node/bin/npm" "$RUNTIME_DIR/node/bin/npx" "$RUNTIME_DIR/node/bin/corepack" 2>/dev/null || true
+    done_msg "Node.js ready"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

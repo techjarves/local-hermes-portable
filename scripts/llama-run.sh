@@ -1254,32 +1254,46 @@ elif [[ -n "$MODEL" ]]; then
 fi
 
 if [[ -z "$MODEL" ]]; then
-    echo -e "${YELLOW}No model specified. Use --list-models${NC}"; exit 1
-fi
-
-if [[ ! -f "$MODEL" ]]; then
+    if [[ "$SERVER_MODE" != true ]]; then
+        echo -e "${YELLOW}No model specified. Use --list-models${NC}"; exit 1
+    fi
+elif [[ ! -f "$MODEL" ]]; then
     echo -e "${RED}Model not found: $MODEL${NC}"; exit 1
 fi
 
 # Auto-sync model path to Hermes config if we're running as a server
 if [[ "$SERVER_MODE" == true ]]; then
     HERMES_CONFIG="$PROJECT_ROOT/hermes/data/config.yaml"
-    if [[ -f "$HERMES_CONFIG" ]]; then
-        python3 -c "
-import sys, re
+    python3 -c "
+import sys, re, os
 config_path = sys.argv[1]
 model_path = sys.argv[2]
 try:
-    with open(config_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    content = re.sub(r'(?m)^([ \t]*default:[ \t]*).*', r'\g<1>' + model_path, content)
-    content = re.sub(r'(?m)^([ \t]*model:[ \t]*).*?\.gguf', r'\g<1>' + model_path, content)
-    with open(config_path, 'w', encoding='utf-8') as f:
-        f.write(content)
+    if not os.path.exists(config_path):
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write('model:\n  provider: llamacpp\n  base_url: \"http://localhost:9090/v1\"\n  api_key: \"dummy\"\n  default: ' + model_path + '\n')
+    else:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        provider_match = re.search(r'(?m)^[ \t]*provider:[ \t]*([^\s]+)', content)
+        is_local = False
+        if provider_match and provider_match.group(1).lower() in ['local', 'openai', 'custom', 'llamacpp', 'ollama']:
+            is_local = True
+            
+        if is_local or not provider_match:
+            if re.search(r'(?m)^[ \t]*default:[ \t]*', content):
+                content = re.sub(r'(?m)^([ \t]*default:[ \t]*).*', r'\g<1>' + model_path, content)
+            elif re.search(r'(?m)^model:[ \t]*\n', content):
+                content = re.sub(r'(?m)^(model:[ \t]*\n)', r'\g<1>  default: ' + model_path + '\n', content)
+            
+            content = re.sub(r'(?m)^([ \t]*model:[ \t]*)(?![\n\r]).*\.gguf', r'\g<1>' + model_path, content)
+            with open(config_path, 'w', encoding='utf-8') as f:
+                f.write(content)
 except Exception as e:
     pass
 " "$HERMES_CONFIG" "$MODEL" 2>/dev/null || true
-    fi
 fi
 
 if [[ "$BACKEND" == "auto" ]]; then

@@ -1605,6 +1605,26 @@ PY
     start_llmfit_backend || true
 
     if [[ "${AUTO_LAUNCH_BROWSER:-}" == "true" ]]; then
+        startup_browser_url() {
+            local base_url="http://localhost:${PORT}"
+            local prompt_file="$MODEL_DIR/.startup-prompt"
+            if [[ ! -s "$prompt_file" ]]; then
+                printf '%s' "$base_url"
+                return
+            fi
+            local encoded_prompt
+            encoded_prompt=$(python3 - "$prompt_file" <<'PY'
+import sys
+import urllib.parse
+
+with open(sys.argv[1], "r", encoding="utf-8") as stream:
+    print(urllib.parse.quote(stream.read()), end="")
+PY
+)
+            rm -f "$prompt_file"
+            printf '%s/?q=%s#/' "$base_url" "$encoded_prompt"
+        }
+        BROWSER_URL="$(startup_browser_url)"
         open_browser_when_ready() {
             local count=0
             # Wait for port to become active (check using python to be system-utility independent)
@@ -1612,13 +1632,13 @@ PY
                 sleep 0.5
                 count=$((count + 1))
             done
-            echo -e "${GREEN}Opening Chat & Model Manager in your browser at http://localhost:${PORT}...${NC}"
+            echo -e "${GREEN}Opening Chat & Model Manager in your browser at ${BROWSER_URL}...${NC}"
             if [[ "$IS_DARWIN" == true ]]; then
-                open "http://localhost:$PORT"
+                open "$BROWSER_URL"
             elif [[ "$(uname -s)" == MINGW* || "$(uname -s)" == CYGWIN* || "$(uname -s)" == MSYS* ]]; then
-                start "http://localhost:$PORT" 2>/dev/null || explorer "http://localhost:$PORT" 2>/dev/null || true
+                start "$BROWSER_URL" 2>/dev/null || explorer "$BROWSER_URL" 2>/dev/null || true
             else
-                xdg-open "http://localhost:$PORT" 2>/dev/null || sensible-browser "http://localhost:$PORT" 2>/dev/null || x-www-browser "http://localhost:$PORT" 2>/dev/null || true
+                xdg-open "$BROWSER_URL" 2>/dev/null || sensible-browser "$BROWSER_URL" 2>/dev/null || x-www-browser "$BROWSER_URL" 2>/dev/null || true
             fi
         }
         open_browser_when_ready &

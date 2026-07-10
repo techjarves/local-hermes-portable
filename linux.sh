@@ -129,7 +129,9 @@ done
 
 # 4. Interactive menu when run with no arguments
 if [ $# -eq 0 ]; then
-    GGUF_COUNT=$(ls "$PROJECT_ROOT/models"/*.gguf 2>/dev/null | wc -l)
+    PYTHON_EXE="$PROJECT_ROOT/llama/linux/python/bin/python3"
+    MODEL_SETUP="$PROJECT_ROOT/scripts/model_setup_server.py"
+    GGUF_COUNT=$("$PYTHON_EXE" "$MODEL_SETUP" --find-models 2>/dev/null | wc -l | tr -d ' ')
     
     echo ""
     echo "Choose an action:"
@@ -144,41 +146,39 @@ if [ $# -eq 0 ]; then
     if [ "$choice" = "1" ]; then
         if [ "$GGUF_COUNT" -eq 0 ]; then
             echo ""
-            echo "No local GGUF models found in models/ directory."
-            echo "Would you like to download a default model now?"
-            echo "1) Download Llama-3-8B-Instruct (Recommended, ~4.9GB)"
-            echo "2) Download Phi-3-Mini (Small/Fast, ~2.4GB)"
-            echo "3) Skip and start server in router mode (Download via Web UI)"
-            echo -n "Select option [1]: "
-            read -r dl_choice
-            dl_choice=${dl_choice:-1}
-            
+            echo -n "No local model is installed. Download a recommended model now? [Y/n] "
+            read -r download_choice
+            download_choice=${download_choice:-y}
+            case "$download_choice" in
+                n|N|no|NO|No)
+                    echo "Model setup cancelled."
+                    exec bash "$PROJECT_ROOT/linux.sh"
+                    ;;
+            esac
+            if ! "$PYTHON_EXE" "$MODEL_SETUP"; then
+                echo "Model setup was not completed."
+                exec bash "$PROJECT_ROOT/linux.sh"
+            fi
+            DEFAULT_MODEL=$("$PYTHON_EXE" "$MODEL_SETUP" --selected-model 2>/dev/null)
+            if [ -z "$DEFAULT_MODEL" ] || [ ! -f "$DEFAULT_MODEL" ]; then
+                echo "Error: setup finished without a complete GGUF model."
+                exec bash "$PROJECT_ROOT/linux.sh"
+            fi
+            DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
+            echo "Starting server with model: $DEFAULT_MODEL_NAME"
+            export AUTO_LAUNCH_BROWSER=true
             export PATH="$PROJECT_ROOT/llama/linux/python/bin:$PATH"
             export LD_LIBRARY_PATH="$PROJECT_ROOT/llama/linux/bin:${LD_LIBRARY_PATH:-}"
             export PROJECT_ROOT
-            
-            if [ "$dl_choice" = "1" ]; then
-                "$PROJECT_ROOT/llama/linux/python/bin/python3" "$PROJECT_ROOT/scripts/download-model.py" "bartowski/Meta-Llama-3-8B-Instruct-GGUF" "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" "$PROJECT_ROOT/models"
-            elif [ "$dl_choice" = "2" ]; then
-                "$PROJECT_ROOT/llama/linux/python/bin/python3" "$PROJECT_ROOT/scripts/download-model.py" "bartowski/Phi-3-mini-4k-instruct-GGUF" "Phi-3-mini-4k-instruct-Q4_K_M.gguf" "$PROJECT_ROOT/models"
-            fi
-            
-            # Recalculate GGUF files
-            shopt -s nullglob
-            MODEL_FILES=("$PROJECT_ROOT/models/"*.gguf)
-            GGUF_COUNT=${#MODEL_FILES[@]}
-            shopt -u nullglob
-            
-            if [ "$GGUF_COUNT" -eq 0 ]; then
-                echo "Starting server in router mode to allow downloads via UI..."
-                export AUTO_LAUNCH_BROWSER=false
-                exec bash "$PROJECT_ROOT/scripts/llama-run.sh" --server
-                exit 0
-            fi
+            exec bash "$PROJECT_ROOT/scripts/llama-run.sh" --server -m "$DEFAULT_MODEL"
+            exit 0
         fi
         
         # Start server, prompting if multiple models are available
-        MODEL_FILES=("$PROJECT_ROOT/models/"*.gguf)
+        MODEL_FILES=()
+        while IFS= read -r model_file; do
+            [ -n "$model_file" ] && MODEL_FILES+=("$model_file")
+        done < <("$PYTHON_EXE" "$MODEL_SETUP" --find-models)
         if [ "${#MODEL_FILES[@]}" -eq 1 ]; then
             DEFAULT_MODEL="${MODEL_FILES[0]}"
             DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
@@ -205,7 +205,7 @@ if [ $# -eq 0 ]; then
         fi
         echo ""
         echo "Starting server with model: $DEFAULT_MODEL_NAME"
-        export AUTO_LAUNCH_BROWSER=false
+        export AUTO_LAUNCH_BROWSER=true
         export PATH="$PROJECT_ROOT/llama/linux/python/bin:$PATH"
         export LD_LIBRARY_PATH="$PROJECT_ROOT/llama/linux/bin:${LD_LIBRARY_PATH:-}"
         export PROJECT_ROOT

@@ -49,7 +49,7 @@ Choose an action:
 4] Quit
 ```
 
-1.  **Start Chat Server (Option 1):** Starts `llama-server` on `http://localhost:9090` with full GPU offloading, auto-detects local GGUF models, and opens the Web UI.
+1.  **Start Chat Server (Option 1):** Starts `llama-server` on `http://localhost:9090` with full GPU offloading, auto-detects complete local GGUF models, and opens the Web UI. If no model exists, Windows, macOS, and Linux all offer the same browser setup: llmfit detects total and currently available RAM, presents recommended models, and supports searches such as Gemma or Qwen. Downloads show inline progress and can be canceled/resumed. An optional first-chat prompt can be entered before continuing into the normal Chat Web UI.
 2.  **Hardware Analysis (Option 2):** Runs `llmfit` to scan your CPU, GPU, RAM, and VRAM and recommends the best-fitting GGUF models for your system.
 3.  **Start Hermes Agent (Option 3):** Launches the **Hermes Agent TUI** (Nous Research), fully configured to use your local server and active model for automated coding and browser tasks.
 
@@ -64,7 +64,7 @@ Choose an action:
     *   **Single-Slot Restricting (`-np 1`):** Limits parallel server slots to 1 for agent chats, saving up to 75% of KV cache memory.
     *   **8-bit Quantized KV Cache (`--cache-type-k q8_0 --cache-type-v q8_0`):** Compresses key-value storage, keeping RAM usage low and avoiding system disk swapping.
     *   **Context & Timeout Management:** Caps repository context file loads (e.g. `AGENTS.md`) to 5,000 characters to ensure sub-10 second prompt evaluations, and extends client timeouts to 10 minutes (`600s`) to prevent connection timeouts during heavy reasoning workloads.
-*   **Router Mode (Zero-Model Startup):** If no `.gguf` files exist in your `models/` directory, the suite boots into an onboarding web page where you can search and download models directly from Hugging Face.
+*   **Guided Zero-Model Startup:** If no complete GGUF exists, the launcher asks before opening a focused llmfit-powered model setup page. Downloads are resumable, stay in `models/`, and multi-part models are only offered to the server after every shard is complete.
 *   **Process Protection:** The script automatically finds and kills zombie background processes (like lingering `llama-server.exe` instances) on startup to prevent port collisions.
 
 ---

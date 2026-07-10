@@ -183,10 +183,14 @@ exit /b 0
 rem 4. Interactive menu when run with no arguments
 if not "%~1"=="" goto :skip_interactive_menu
 
+:interactive_menu
+set "PYTHON_EXE=%PROJECT_ROOT%\llama\windows\python\python.exe"
+set "MODEL_SETUP=%PROJECT_ROOT%\scripts\model_setup_server.py"
+set "MODEL_LIST_FILE=%TEMP%\llama-ai-portable-models.txt"
+"%PYTHON_EXE%" "%MODEL_SETUP%" --find-models > "%MODEL_LIST_FILE%" 2>nul
 set GGUF_COUNT=0
-for %%f in ("%PROJECT_ROOT%\models\*.gguf") do (
+for /f "usebackq delims=" %%f in ("%MODEL_LIST_FILE%") do (
     set /a GGUF_COUNT+=1
-    set "LAST_MODEL=%%f"
 )
 
 echo.
@@ -210,54 +214,31 @@ exit /b 0
 
 :action_prompt_downloader
 echo.
-echo No local GGUF models found in models\ directory.
-echo Would you like to download a default model now?
-echo 1] Download Llama-3-8B-Instruct (Recommended, ~4.9GB)
-echo 2] Download Phi-3-Mini (Small/Fast, ~2.4GB)
-echo 3] Skip and start server in router mode (Download via Web UI)
-set /p dl_choice="Select option [1]: "
-if "%dl_choice%"=="" set dl_choice=1
-
-if "%dl_choice%"=="1" (
-    "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\scripts\download-model.py" "bartowski/Meta-Llama-3-8B-Instruct-GGUF" "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" "%PROJECT_ROOT%\models"
-) else if "%dl_choice%"=="2" (
-    "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\scripts\download-model.py" "bartowski/Phi-3-mini-4k-instruct-GGUF" "Phi-3-mini-4k-instruct-Q4_K_M.gguf" "%PROJECT_ROOT%\models"
+set "DOWNLOAD_CHOICE="
+set /p DOWNLOAD_CHOICE="No local model is installed. Download a recommended model now? [Y/n] "
+if /I "%DOWNLOAD_CHOICE%"=="n" goto :interactive_menu
+if /I "%DOWNLOAD_CHOICE%"=="no" goto :interactive_menu
+"%PYTHON_EXE%" "%MODEL_SETUP%"
+if errorlevel 1 (
+    echo Model setup was not completed.
+    goto :interactive_menu
 )
-
-rem Recalculate GGUF_COUNT
-set GGUF_COUNT=0
-for %%f in ("%PROJECT_ROOT%\models\*.gguf") do (
-    set /a GGUF_COUNT+=1
+set "DEFAULT_MODEL="
+set "SELECTED_MODEL_FILE=%TEMP%\llama-ai-portable-selected-model.txt"
+"%PYTHON_EXE%" "%MODEL_SETUP%" --selected-model > "%SELECTED_MODEL_FILE%" 2>nul
+for /f "usebackq delims=" %%f in ("%SELECTED_MODEL_FILE%") do set "DEFAULT_MODEL=%%f"
+if not defined DEFAULT_MODEL (
+    echo Error: setup finished without a complete GGUF model.
+    goto :interactive_menu
 )
-if "%GGUF_COUNT%" neq "0" (
-    goto action_start_default
-)
-
-echo Starting server in router mode to allow downloads via UI...
-
-REM Start server in router mode and auto-launch browser
-if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
-set PATH=%PROJECT_ROOT%\llama\windows\python;%PROJECT_ROOT%\llama\windows\python\Scripts;%PATH%
-where bash >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    bash "%PROJECT_ROOT%\scripts\llama-run.sh" --server
-) else (
-    taskkill /F /IM llama-server.exe 2>nul
-    taskkill /F /IM llmfit.exe 2>nul
-    if exist "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" (
-        start "" /B "%PROJECT_ROOT%\llama\windows\bin\llmfit.exe" serve --port 8787
-    )
-    start /B "" "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\llama\windows\wait-server.py" 9090 %AUTO_LAUNCH_BROWSER%
-    echo Starting server on http://localhost:9090...
-    "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -c %LLAMA_CTX_SIZE% -np %LLAMA_SLOTS% -ngl %LLAMA_GPU_LAYERS% --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
-)
-exit /b 0
-
-
+for %%F in ("%DEFAULT_MODEL%") do set "DEFAULT_MODEL_NAME=%%~nF"
+set AUTO_LAUNCH_BROWSER=true
+goto :launch_selected_model
 :action_start_default
+set AUTO_LAUNCH_BROWSER=true
 setlocal EnableDelayedExpansion
 set model_count=0
-for %%F in ("%PROJECT_ROOT%\models\*.gguf") do (
+for /f "usebackq delims=" %%F in ("%MODEL_LIST_FILE%") do (
     set /a model_count+=1
     set "MODEL_!model_count!=%%F"
     set "MODEL_NAME_!model_count!=%%~nF"
@@ -293,11 +274,11 @@ if not defined DEFAULT_MODEL (
 set "DEFAULT_MODEL_NAME=!MODEL_NAME_%mod_choice%!"
 
 :exec_start_default
-echo.
-echo Starting server with model: !DEFAULT_MODEL_NAME!
-
-REM Set variables for outside the local block
 endlocal & set "DEFAULT_MODEL=%DEFAULT_MODEL%" & set "DEFAULT_MODEL_NAME=%DEFAULT_MODEL_NAME%"
+
+:launch_selected_model
+echo.
+echo Starting server with model: %DEFAULT_MODEL_NAME%
 
 if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
 set PATH=%PROJECT_ROOT%\llama\windows\python;%PROJECT_ROOT%\llama\windows\python\Scripts;%PATH%
@@ -335,6 +316,7 @@ if exist "%PROJECT_ROOT%\hermes\launch.bat" (
 exit /b 0
 
 
+:skip_interactive_menu
 rem 5. Launching
 set PATH=%PROJECT_ROOT%\llama\windows\python;%PROJECT_ROOT%\llama\windows\python\Scripts;%PATH%
 

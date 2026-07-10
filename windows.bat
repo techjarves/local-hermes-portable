@@ -85,49 +85,27 @@ echo VC++ Redistributable installed.
 :skip_vc_install
 
 
-rem 2. Build CachyLLama if binaries are missing
+rem 2. Download precompiled CachyLLama if missing
 if exist "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" goto :skip_cachy_build
 
-echo Building CachyLLama Vulkan backend (one-time build)...
-
-where cmake >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo CMake not found. Downloading precompiled Vulkan/CPU binaries...
-    if not exist "%PROJECT_ROOT%\llama\windows\bin" mkdir "%PROJECT_ROOT%\llama\windows\bin"
-    powershell -ExecutionPolicy Bypass -File "%PROJECT_ROOT%\llama\windows\download.ps1" "https://github.com/ggml-org/llama.cpp/releases/download/b9847/llama-b9847-bin-win-vulkan-x64.zip" "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip"
-    if exist "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip" (
-        powershell -Command "Expand-Archive -Path '%PROJECT_ROOT%\llama\windows\bin\llama_win.zip' -DestinationPath '%PROJECT_ROOT%\llama\windows\bin' -Force"
-        del "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip" 2>nul
-        echo Precompiled binaries installed portably.
-        goto :skip_cachy_build
-    ) else (
-        echo Error: Failed to download precompiled binaries. Please install Build Tools/CMake first.
-        exit /b 1
-    )
-)
-
-if not exist "%PROJECT_ROOT%\llama\CachyLLama\build_temp" mkdir "%PROJECT_ROOT%\llama\CachyLLama\build_temp"
-cd "%PROJECT_ROOT%\llama\CachyLLama\build_temp"
-
-cmake .. -DCMAKE_BUILD_TYPE=Release -DGGML_VULKAN=ON -DGGML_CPU=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=ON
-
-cmake --build . --config Release -j4
-
-if %ERRORLEVEL% neq 0 (
-    echo Error: Build failed.
-    cd "%PROJECT_ROOT%"
-    exit /b 1
-)
+echo Downloading precompiled CachyLLama backend...
 
 if not exist "%PROJECT_ROOT%\llama\windows\bin" mkdir "%PROJECT_ROOT%\llama\windows\bin"
-copy bin\Release\llama-server.exe "%PROJECT_ROOT%\llama\windows\bin\"
-copy bin\Release\llama-cli.exe "%PROJECT_ROOT%\llama\windows\bin\"
-rem Copy shared libraries (.dll) needed at runtime
-copy bin\Release\*.dll "%PROJECT_ROOT%\llama\windows\bin\" 2>nul
 
-cd "%PROJECT_ROOT%"
-rmdir /s /q "%PROJECT_ROOT%\llama\CachyLLama\build_temp"
-echo Build complete.
+set LLAMA_ZIP_URL=https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-win-vulkan-x64.zip
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
+    set LLAMA_ZIP_URL=https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-win-cpu-arm64.zip
+)
+
+powershell -ExecutionPolicy Bypass -File "%PROJECT_ROOT%\llama\windows\download.ps1" "%LLAMA_ZIP_URL%" "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip"
+if exist "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip" (
+    powershell -Command "Expand-Archive -Path '%PROJECT_ROOT%\llama\windows\bin\llama_win.zip' -DestinationPath '%PROJECT_ROOT%\llama\windows\bin' -Force"
+    del "%PROJECT_ROOT%\llama\windows\bin\llama_win.zip" 2>nul
+    echo Precompiled binaries installed portably.
+) else (
+    echo Error: Failed to download precompiled CachyLLama binaries.
+    exit /b 1
+)
 
 :skip_cachy_build
 

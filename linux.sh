@@ -55,41 +55,29 @@ if [ ! -d "$PROJECT_ROOT/llama/linux/python" ]; then
 fi
 
 # 2. Build CachyLLama if binaries are missing
+# 2. Download precompiled CachyLLama if missing
 if [ ! -f "$PROJECT_ROOT/llama/linux/bin/llama-server" ] || [ ! -f "$PROJECT_ROOT/llama/linux/bin/llama-cli" ]; then
-    # Detect if glslc is available for Vulkan shader compilation
-    if command -v glslc >/dev/null 2>&1; then
-        echo "Building CachyLLama Vulkan backend (one-time build)..."
-        VULKAN_FLAG="ON"
+    echo "Downloading precompiled CachyLLama Vulkan backend..."
+    mkdir -p "$PROJECT_ROOT/llama/linux/bin"
+    
+    local_arch="$(uname -m)"
+    if [ "$local_arch" = "aarch64" ] || [ "$local_arch" = "arm64" ]; then
+        llama_url="https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-ubuntu-vulkan-arm64.tar.gz"
     else
-        echo "Warning: glslc (Vulkan shader compiler) not found. Falling back to CPU-only backend..."
-        VULKAN_FLAG="OFF"
+        llama_url="https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-ubuntu-vulkan-x64.tar.gz"
     fi
     
-    mkdir -p "$PROJECT_ROOT/llama/CachyLLama/build_temp"
-    cd "$PROJECT_ROOT/llama/CachyLLama/build_temp" || exit 1
-    
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DGGML_HIP=OFF \
-        -DGGML_HIPBLAS=OFF \
-        -DGGML_VULKAN="$VULKAN_FLAG" \
-        -DGGML_CPU=ON \
-        -DLLAMA_BUILD_SERVER=ON \
-        -DLLAMA_BUILD_TESTS=OFF \
-        -DLLAMA_BUILD_EXAMPLES=ON
+    if curl -L -s "$llama_url" -o "$PROJECT_ROOT/llama/linux/bin/llama_linux.tar.gz"; then
+        tar -xzf "$PROJECT_ROOT/llama/linux/bin/llama_linux.tar.gz" -C "$PROJECT_ROOT/llama/linux/bin" --strip-components=1
+        rm -f "$PROJECT_ROOT/llama/linux/bin/llama_linux.tar.gz"
         
-    JOBS=$(nproc 2>/dev/null || echo 4)
-    cmake --build . --config Release -j"$JOBS"
-    
-    mkdir -p "$PROJECT_ROOT/llama/linux/bin"
-    cp bin/llama-server "$PROJECT_ROOT/llama/linux/bin/"
-    cp bin/llama-cli "$PROJECT_ROOT/llama/linux/bin/"
-    # Copy shared libraries (.so) needed at runtime
-    cp bin/*.so* "$PROJECT_ROOT/llama/linux/bin/" 2>/dev/null || true
-    
-    cd "$PROJECT_ROOT" || exit 1
-    rm -rf "$PROJECT_ROOT/llama/CachyLLama/build_temp"
-    echo "Build complete."
+        # Ensure executable
+        chmod +x "$PROJECT_ROOT/llama/linux/bin/llama-server" "$PROJECT_ROOT/llama/linux/bin/llama-cli" 2>/dev/null || true
+        echo "Download and setup complete."
+    else
+        echo "Error: Failed to download precompiled CachyLLama binaries."
+        exit 1
+    fi
 fi
 
 # 2b. Download llmfit if not present

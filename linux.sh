@@ -144,13 +144,37 @@ if [ $# -eq 0 ]; then
     if [ "$choice" = "1" ]; then
         if [ "$GGUF_COUNT" -eq 0 ]; then
             echo ""
-            echo "No local GGUF models found. Starting server in router mode to allow downloads..."
-            export AUTO_LAUNCH_BROWSER=false
+            echo "No local GGUF models found in models/ directory."
+            echo "Would you like to download a default model now?"
+            echo "1) Download Llama-3-8B-Instruct (Recommended, ~4.9GB)"
+            echo "2) Download Phi-3-Mini (Small/Fast, ~2.4GB)"
+            echo "3) Skip and start server in router mode (Download via Web UI)"
+            echo -n "Select option [1]: "
+            read -r dl_choice
+            dl_choice=${dl_choice:-1}
+            
             export PATH="$PROJECT_ROOT/llama/linux/python/bin:$PATH"
             export LD_LIBRARY_PATH="$PROJECT_ROOT/llama/linux/bin:${LD_LIBRARY_PATH:-}"
             export PROJECT_ROOT
-            exec bash "$PROJECT_ROOT/scripts/llama-run.sh" --server
-            exit 0
+            
+            if [ "$dl_choice" = "1" ]; then
+                "$PROJECT_ROOT/llama/linux/python/bin/python3" "$PROJECT_ROOT/scripts/download-model.py" "bartowski/Meta-Llama-3-8B-Instruct-GGUF" "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" "$PROJECT_ROOT/models"
+            elif [ "$dl_choice" = "2" ]; then
+                "$PROJECT_ROOT/llama/linux/python/bin/python3" "$PROJECT_ROOT/scripts/download-model.py" "bartowski/Phi-3-mini-4k-instruct-GGUF" "Phi-3-mini-4k-instruct-Q4_K_M.gguf" "$PROJECT_ROOT/models"
+            fi
+            
+            # Recalculate GGUF files
+            shopt -s nullglob
+            MODEL_FILES=("$PROJECT_ROOT/models/"*.gguf)
+            GGUF_COUNT=${#MODEL_FILES[@]}
+            shopt -u nullglob
+            
+            if [ "$GGUF_COUNT" -eq 0 ]; then
+                echo "Starting server in router mode to allow downloads via UI..."
+                export AUTO_LAUNCH_BROWSER=false
+                exec bash "$PROJECT_ROOT/scripts/llama-run.sh" --server
+                exit 0
+            fi
         fi
         
         # Start server, prompting if multiple models are available

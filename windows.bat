@@ -210,7 +210,30 @@ exit /b 0
 
 :action_prompt_downloader
 echo.
-echo No local GGUF models found. Starting server in router mode to allow downloads...
+echo No local GGUF models found in models\ directory.
+echo Would you like to download a default model now?
+echo 1] Download Llama-3-8B-Instruct (Recommended, ~4.9GB)
+echo 2] Download Phi-3-Mini (Small/Fast, ~2.4GB)
+echo 3] Skip and start server in router mode (Download via Web UI)
+set /p dl_choice="Select option [1]: "
+if "%dl_choice%"=="" set dl_choice=1
+
+if "%dl_choice%"=="1" (
+    "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\scripts\download-model.py" "bartowski/Meta-Llama-3-8B-Instruct-GGUF" "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf" "%PROJECT_ROOT%\models"
+) else if "%dl_choice%"=="2" (
+    "%PROJECT_ROOT%\llama\windows\python\python.exe" "%PROJECT_ROOT%\scripts\download-model.py" "bartowski/Phi-3-mini-4k-instruct-GGUF" "Phi-3-mini-4k-instruct-Q4_K_M.gguf" "%PROJECT_ROOT%\models"
+)
+
+rem Recalculate GGUF_COUNT
+set GGUF_COUNT=0
+for %%f in ("%PROJECT_ROOT%\models\*.gguf") do (
+    set /a GGUF_COUNT+=1
+)
+if "%GGUF_COUNT%" neq "0" (
+    goto action_start_default
+)
+
+echo Starting server in router mode to allow downloads via UI...
 
 REM Start server in router mode and auto-launch browser
 if not defined AUTO_LAUNCH_BROWSER set AUTO_LAUNCH_BROWSER=false
@@ -229,6 +252,7 @@ if %ERRORLEVEL% equ 0 (
     "%PROJECT_ROOT%\llama\windows\bin\llama-server.exe" -c %LLAMA_CTX_SIZE% -np %LLAMA_SLOTS% -ngl %LLAMA_GPU_LAYERS% --cache-type-k q8_0 --cache-type-v q8_0 --host 0.0.0.0 --port 9090 --ui-mcp-proxy %CACHE_ARG%
 )
 exit /b 0
+
 
 :action_start_default
 setlocal EnableDelayedExpansion

@@ -54,51 +54,37 @@ if [ ! -d "$PROJECT_ROOT/llama/mac/python" ]; then
     "$PROJECT_ROOT/llama/mac/python/bin/python3" -m pip install huggingface_hub urllib3
 fi
 
-# 2. Build CachyLLama if binaries are missing
+# 2. Download precompiled CachyLLama (llama.cpp) if missing
 if [ ! -f "$PROJECT_ROOT/llama/mac/bin/llama-server" ] || [ ! -f "$PROJECT_ROOT/llama/mac/bin/llama-cli" ]; then
-    echo "Building CachyLLama Metal backend (one-time build)..."
+    echo "Downloading precompiled CachyLLama Metal backend..."
+    mkdir -p "$PROJECT_ROOT/llama/mac/bin"
     
-    # Verify cmake is installed
-    if ! command -v cmake >/dev/null 2>&1; then
-        echo "Error: cmake is required to build llama-server. Please install it first (e.g. brew install cmake)."
-        exit 1
+    local_arch="$(uname -m)"
+    if [ "$local_arch" = "arm64" ]; then
+        llama_url="https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-macos-arm64.tar.gz"
+    else
+        llama_url="https://github.com/ggml-org/llama.cpp/releases/download/b9949/llama-b9949-bin-macos-x64.tar.gz"
     fi
     
-    mkdir -p "$PROJECT_ROOT/llama/CachyLLama/build_temp"
-    cd "$PROJECT_ROOT/llama/CachyLLama/build_temp" || exit 1
-    
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_COMPILER=clang \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DGGML_METAL=ON \
-        -DGGML_METAL_NDEBUG=ON \
-        -DGGML_CPU=ON \
-        -DGGML_NATIVE=ON \
-        -DLLAMA_BUILD_SERVER=ON \
-        -DLLAMA_BUILD_TESTS=OFF \
-        -DLLAMA_BUILD_EXAMPLES=ON
+    if curl -L -s "$llama_url" -o "$PROJECT_ROOT/llama/mac/bin/llama_mac.tar.gz"; then
+        tar -xzf "$PROJECT_ROOT/llama/mac/bin/llama_mac.tar.gz" -C "$PROJECT_ROOT/llama/mac/bin" --strip-components=1
+        rm -f "$PROJECT_ROOT/llama/mac/bin/llama_mac.tar.gz"
         
-    JOBS=$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
-    cmake --build . --config Release -j"$JOBS"
-    
-    mkdir -p "$PROJECT_ROOT/llama/mac/bin"
-    cp bin/llama-server "$PROJECT_ROOT/llama/mac/bin/"
-    cp bin/llama-cli "$PROJECT_ROOT/llama/mac/bin/"
-    # Copy shared libraries (.dylib) needed at runtime
-    cp bin/*.dylib "$PROJECT_ROOT/llama/mac/bin/" 2>/dev/null || true
-    
-    # Add @loader_path to RPATH for macOS System Integrity Protection (SIP) compatibility
-    echo "Configuring library search paths for macOS..."
-    for f in "$PROJECT_ROOT/llama/mac/bin"/*; do
-        if [ -f "$f" ]; then
-            install_name_tool -add_rpath "@loader_path" "$f" 2>/dev/null || true
-        fi
-    done
-    
-    cd "$PROJECT_ROOT" || exit 1
-    rm -rf "$PROJECT_ROOT/llama/CachyLLama/build_temp"
-    echo "Build complete."
+        # Ensure executable
+        chmod +x "$PROJECT_ROOT/llama/mac/bin/llama-server" "$PROJECT_ROOT/llama/mac/bin/llama-cli" 2>/dev/null || true
+        
+        # Add @loader_path to RPATH for macOS System Integrity Protection (SIP) compatibility
+        echo "Configuring library search paths for macOS..."
+        for f in "$PROJECT_ROOT/llama/mac/bin"/*; do
+            if [ -f "$f" ]; then
+                install_name_tool -add_rpath "@loader_path" "$f" 2>/dev/null || true
+            fi
+        done
+        echo "Download and setup complete."
+    else
+        echo "Error: Failed to download precompiled CachyLLama binaries."
+        exit 1
+    fi
 fi
 
 # 2b. Download llmfit if not present

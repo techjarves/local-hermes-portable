@@ -134,45 +134,59 @@ for arg in "$@"; do
     esac
 done
 
-# 4. Interactive menu when run with no arguments
+## 4. Interactive menu when run with no arguments
 if [ $# -eq 0 ]; then
     PYTHON_EXE="$PROJECT_ROOT/llama/mac/python/bin/python3"
     MODEL_SETUP="$PROJECT_ROOT/scripts/model_setup_server.py"
     GGUF_COUNT=$("$PYTHON_EXE" "$MODEL_SETUP" --find-models 2>/dev/null | wc -l | tr -d ' ')
     
-    echo ""
-    echo "Choose an action:"
-    echo "1) Start Chat Server & Web UI (default)"
-    echo "2) Run Hardware Analysis & Model Fit (llmfit)"
-    echo "3) Start Hermes Agent"
-    echo "4) Quit"
-    echo -n "Select option [1]: "
+    # ANSI Colors
+    PURPLE='\033[1;35m'
+    CYAN='\033[1;36m'
+    GREEN='\033[1;32m'
+    YELLOW='\033[1;33m'
+    RED='\033[1;31m'
+    BOLD='\033[1m'
+    NC='\033[0m'
+
+    echo -e ""
+    echo -e "${PURPLE}=================================================${NC}"
+    echo -e "${PURPLE}    Llama AI - Local Model Launcher & Setup       ${NC}"
+    echo -e "${PURPLE}=================================================${NC}"
+    echo -e ""
+    echo -e "${BOLD}Choose an action:${NC}"
+    echo -e "  ${CYAN}1)${NC} 🚀 Start Chat Server & Web UI ${GREEN}(default)${NC}"
+    echo -e "  ${CYAN}2)${NC} 📊 Run Hardware Analysis & Model Fit (llmfit)"
+    echo -e "  ${CYAN}3)${NC} 🤖 Start Hermes Agent"
+    echo -e "  ${CYAN}4)${NC} 🚪 Quit"
+    echo -e ""
+    echo -e -n "👉 Select option [${CYAN}1${NC}]: "
     read -r choice
     choice=${choice:-1}
     
     if [ "$choice" = "1" ]; then
         if [ "$GGUF_COUNT" -eq 0 ]; then
-            echo ""
-            echo -n "No local model is installed. Download a recommended model now? [Y/n] "
+            echo -e ""
+            echo -e -n "${YELLOW}⚠️  No local model is installed. Download a recommended model now? [Y/n] ${NC}"
             read -r download_choice
             download_choice=${download_choice:-y}
             case "$download_choice" in
                 n|N|no|NO|No)
-                    echo "Model setup cancelled."
+                    echo -e "${RED}Model setup cancelled.${NC}"
                     exec bash "$PROJECT_ROOT/mac.sh"
                     ;;
             esac
             if ! "$PYTHON_EXE" "$MODEL_SETUP"; then
-                echo "Model setup was not completed."
+                echo -e "${RED}Model setup was not completed.${NC}"
                 exec bash "$PROJECT_ROOT/mac.sh"
             fi
             DEFAULT_MODEL=$("$PYTHON_EXE" "$MODEL_SETUP" --selected-model 2>/dev/null)
             if [ -z "$DEFAULT_MODEL" ] || [ ! -f "$DEFAULT_MODEL" ]; then
-                echo "Error: setup finished without a complete GGUF model."
+                echo -e "${RED}Error: setup finished without a complete GGUF model.${NC}"
                 exec bash "$PROJECT_ROOT/mac.sh"
             fi
             DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
-            echo "Starting server with model: $DEFAULT_MODEL_NAME"
+            echo -e "${GREEN}Starting server with model: $DEFAULT_MODEL_NAME${NC}"
             export AUTO_LAUNCH_BROWSER=true
             export PATH="$PROJECT_ROOT/llama/mac/python/bin:$PATH"
             export DYLD_LIBRARY_PATH="$PROJECT_ROOT/llama/mac/bin:${DYLD_LIBRARY_PATH:-}"
@@ -187,24 +201,25 @@ if [ $# -eq 0 ]; then
             [ -n "$model_file" ] && MODEL_FILES+=("$model_file")
         done < <("$PYTHON_EXE" "$MODEL_SETUP" --find-models)
         echo ""
-        echo "Please choose a model option:"
-        echo "  0) Download/setup a new model"
+        echo -e "${BOLD}Please choose a model option:${NC}"
+        echo -e "  ${YELLOW}0)${NC} ✨ Download/setup a new model"
         i=1
         for m in "${MODEL_FILES[@]}"; do
-            echo "  $i) Start $(basename "$m" .gguf)"
+            echo -e "  ${CYAN}$i)${NC} 📦 Start ${GREEN}$(basename "$m" .gguf)${NC}"
             i=$((i+1))
         done
-        echo -n "Select option [1]: "
+        echo -e ""
+        echo -e -n "👉 Select option [${CYAN}1${NC}]: "
         read -r mod_choice
         mod_choice=${mod_choice:-1}
         if [ "$mod_choice" = "0" ]; then
             if ! "$PYTHON_EXE" "$MODEL_SETUP"; then
-                echo "Model setup was not completed."
+                echo -e "${RED}Model setup was not completed.${NC}"
                 exec bash "$PROJECT_ROOT/mac.sh"
             fi
             DEFAULT_MODEL=$("$PYTHON_EXE" "$MODEL_SETUP" --selected-model 2>/dev/null)
             if [ -z "$DEFAULT_MODEL" ] || [ ! -f "$DEFAULT_MODEL" ]; then
-                echo "Error: setup finished without a complete GGUF model."
+                echo -e "${RED}Error: setup finished without a complete GGUF model.${NC}"
                 exec bash "$PROJECT_ROOT/mac.sh"
             fi
             DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
@@ -214,13 +229,13 @@ if [ $# -eq 0 ]; then
                 DEFAULT_MODEL="${MODEL_FILES[$idx]}"
                 DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
             else
-                echo "Invalid choice. Defaulting to 1."
+                echo -e "${YELLOW}Invalid choice. Defaulting to 1.${NC}"
                 DEFAULT_MODEL="${MODEL_FILES[0]}"
                 DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
             fi
         fi
         echo ""
-        echo "Starting server with model: $DEFAULT_MODEL_NAME"
+        echo -e "${GREEN}Starting server with model: $DEFAULT_MODEL_NAME${NC}"
         export AUTO_LAUNCH_BROWSER=true
         export PATH="$PROJECT_ROOT/llama/mac/python/bin:$PATH"
         export DYLD_LIBRARY_PATH="$PROJECT_ROOT/llama/mac/bin:${DYLD_LIBRARY_PATH:-}"
@@ -231,14 +246,14 @@ if [ $# -eq 0 ]; then
         if [ -f "$PROJECT_ROOT/llama/mac/bin/llmfit" ]; then
             exec "$PROJECT_ROOT/llama/mac/bin/llmfit"
         else
-            echo "Error: llmfit binary is missing."
+            echo -e "${RED}Error: llmfit binary is missing.${NC}"
         fi
         exit 0
     elif [ "$choice" = "3" ]; then
         if [ -f "$PROJECT_ROOT/hermes/launch.sh" ]; then
             cd "$PROJECT_ROOT/hermes" && exec bash launch.sh
         else
-            echo "Error: Hermes not found in $PROJECT_ROOT/hermes"
+            echo -e "${RED}Error: Hermes not found in $PROJECT_ROOT/hermes${NC}"
             exit 1
         fi
     else

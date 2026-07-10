@@ -181,25 +181,34 @@ if [ $# -eq 0 ]; then
             exit 0
         fi
         
-        # Start server, prompting if multiple models are available
+        # Prompt user whether to download a new one or select an existing one
         MODEL_FILES=()
         while IFS= read -r model_file; do
             [ -n "$model_file" ] && MODEL_FILES+=("$model_file")
         done < <("$PYTHON_EXE" "$MODEL_SETUP" --find-models)
-        if [ "${#MODEL_FILES[@]}" -eq 1 ]; then
-            DEFAULT_MODEL="${MODEL_FILES[0]}"
+        echo ""
+        echo "Please choose a model option:"
+        echo "  0) Download/setup a new model"
+        i=1
+        for m in "${MODEL_FILES[@]}"; do
+            echo "  $i) Start $(basename "$m" .gguf)"
+            i=$((i+1))
+        done
+        echo -n "Select option [1]: "
+        read -r mod_choice
+        mod_choice=${mod_choice:-1}
+        if [ "$mod_choice" = "0" ]; then
+            if ! "$PYTHON_EXE" "$MODEL_SETUP"; then
+                echo "Model setup was not completed."
+                exec bash "$PROJECT_ROOT/mac.sh"
+            fi
+            DEFAULT_MODEL=$("$PYTHON_EXE" "$MODEL_SETUP" --selected-model 2>/dev/null)
+            if [ -z "$DEFAULT_MODEL" ] || [ ! -f "$DEFAULT_MODEL" ]; then
+                echo "Error: setup finished without a complete GGUF model."
+                exec bash "$PROJECT_ROOT/mac.sh"
+            fi
             DEFAULT_MODEL_NAME=$(basename "$DEFAULT_MODEL" .gguf)
         else
-            echo ""
-            echo "Multiple models found. Please choose one to start:"
-            i=1
-            for m in "${MODEL_FILES[@]}"; do
-                echo "  $i) $(basename "$m" .gguf)"
-                i=$((i+1))
-            done
-            echo -n "Select model [1]: "
-            read -r mod_choice
-            mod_choice=${mod_choice:-1}
             idx=$((mod_choice-1))
             if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#MODEL_FILES[@]}" ]; then
                 DEFAULT_MODEL="${MODEL_FILES[$idx]}"

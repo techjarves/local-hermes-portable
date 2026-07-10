@@ -218,6 +218,8 @@ set "DOWNLOAD_CHOICE="
 set /p DOWNLOAD_CHOICE="No local model is installed. Download a recommended model now? [Y/n] "
 if /I "%DOWNLOAD_CHOICE%"=="n" goto :interactive_menu
 if /I "%DOWNLOAD_CHOICE%"=="no" goto :interactive_menu
+
+:action_prompt_downloader_force
 "%PYTHON_EXE%" "%MODEL_SETUP%"
 if errorlevel 1 (
     echo Model setup was not completed.
@@ -234,6 +236,7 @@ if not defined DEFAULT_MODEL (
 for %%F in ("%DEFAULT_MODEL%") do set "DEFAULT_MODEL_NAME=%%~nF"
 set AUTO_LAUNCH_BROWSER=true
 goto :launch_selected_model
+
 :action_start_default
 set AUTO_LAUNCH_BROWSER=true
 setlocal EnableDelayedExpansion
@@ -250,19 +253,19 @@ if !model_count! equ 0 (
     exit /b 1
 )
 
-if !model_count! equ 1 (
-    set "DEFAULT_MODEL=!MODEL_1!"
-    set "DEFAULT_MODEL_NAME=!MODEL_NAME_1!"
-    goto exec_start_default
-)
-
 echo.
-echo Multiple models found. Please choose one to start:
+echo Please choose a model option:
+echo   0] Download/setup a new model
 for /L %%I in (1,1,!model_count!) do (
-    echo   %%I] !MODEL_NAME_%%I!
+    echo   %%I] Start !MODEL_NAME_%%I!
 )
-set /p mod_choice="Select model [1]: "
+set /p mod_choice="Select option [1]: "
 if "!mod_choice!"=="" set mod_choice=1
+
+if "!mod_choice!"=="0" (
+    endlocal
+    goto action_prompt_downloader_force
+)
 
 REM Validate choice
 set "DEFAULT_MODEL=!MODEL_%mod_choice%!"

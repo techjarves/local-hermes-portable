@@ -195,11 +195,11 @@ for /f "usebackq delims=" %%f in ("%MODEL_LIST_FILE%") do (
 
 echo.
 echo %BOLD%Choose an action:%RESET%
-echo   %CYAN%1]%RESET% 🚀 Start Chat Server and Web UI %GREEN%[default]%RESET%
-echo   %CYAN%2]%RESET% 💻 Run Hardware Analysis and Model Fit (llmfit)
-echo   %CYAN%3]%RESET% 🤖 Start Hermes Agent
-echo   %CYAN%4]%RESET% 🚪 Quit
-set /p choice="👉 Select option [1]: "
+echo   %CYAN%1]%RESET% Start Chat Server and Web UI %GREEN%[default]%RESET%
+echo   %CYAN%2]%RESET% Run Hardware Analysis and Model Fit (llmfit)
+echo   %CYAN%3]%RESET% Start Hermes Agent
+echo   %CYAN%4]%RESET% Quit
+set /p choice="Select option [1]: "
 if "%choice%"=="" set choice=1
 if "%choice%"=="1" (
     if "%GGUF_COUNT%"=="0" (
@@ -215,7 +215,7 @@ exit /b 0
 :action_prompt_downloader
 echo.
 set "DOWNLOAD_CHOICE="
-set /p DOWNLOAD_CHOICE="%YELLOW%⚠  No local model is installed. Download a recommended model now? [Y/n] %RESET%"
+set /p DOWNLOAD_CHOICE="%YELLOW%[!] No local model is installed. Download a recommended model now? [Y/n] %RESET%"
 if /I "%DOWNLOAD_CHOICE%"=="n" goto :interactive_menu
 if /I "%DOWNLOAD_CHOICE%"=="no" goto :interactive_menu
 
@@ -255,11 +255,11 @@ if !model_count! equ 0 (
 
 echo.
 echo %BOLD%Please choose a model option:%RESET%
-echo   %YELLOW%0]%RESET% ✨ Download/setup a new model
+echo   %YELLOW%0]%RESET% Download/setup a new model
 for /L %%I in (1,1,!model_count!) do (
-    echo   %CYAN%%%I]%RESET% 📦 Start %GREEN%!MODEL_NAME_%%I!%RESET%
+    echo   %CYAN%%%I]%RESET% Start %GREEN%!MODEL_NAME_%%I!%RESET%
 )
-set /p mod_choice="👉 Select option [1]: "
+set /p mod_choice="Select option [1]: "
 if "!mod_choice!"=="" set mod_choice=1
 
 if "!mod_choice!"=="0" (

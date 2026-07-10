@@ -155,19 +155,19 @@ if [ $# -eq 0 ]; then
     echo -e "${PURPLE}=================================================${NC}"
     echo -e ""
     echo -e "${BOLD}Choose an action:${NC}"
-    echo -e "  ${CYAN}1)${NC} 🚀 Start Chat Server & Web UI ${GREEN}(default)${NC}"
-    echo -e "  ${CYAN}2)${NC} 📊 Run Hardware Analysis & Model Fit (llmfit)"
-    echo -e "  ${CYAN}3)${NC} 🤖 Start Hermes Agent"
-    echo -e "  ${CYAN}4)${NC} 🚪 Quit"
+    echo -e "  ${CYAN}1)${NC} Start Chat Server & Web UI ${GREEN}(default)${NC}"
+    echo -e "  ${CYAN}2)${NC} Run Hardware Analysis & Model Fit (llmfit)"
+    echo -e "  ${CYAN}3)${NC} Start Hermes Agent"
+    echo -e "  ${CYAN}4)${NC} Quit"
     echo -e ""
-    echo -e -n "👉 Select option [${CYAN}1${NC}]: "
+    echo -e -n "Select option [${CYAN}1${NC}]: "
     read -r choice
     choice=${choice:-1}
     
     if [ "$choice" = "1" ]; then
         if [ "$GGUF_COUNT" -eq 0 ]; then
             echo -e ""
-            echo -e -n "${YELLOW}⚠️  No local model is installed. Download a recommended model now? [Y/n] ${NC}"
+            echo -e -n "${YELLOW}[!] No local model is installed. Download a recommended model now? [Y/n] ${NC}"
             read -r download_choice
             download_choice=${download_choice:-y}
             case "$download_choice" in
@@ -202,14 +202,14 @@ if [ $# -eq 0 ]; then
         done < <("$PYTHON_EXE" "$MODEL_SETUP" --find-models)
         echo ""
         echo -e "${BOLD}Please choose a model option:${NC}"
-        echo -e "  ${YELLOW}0)${NC} ✨ Download/setup a new model"
+        echo -e "  ${YELLOW}0)${NC} Download/setup a new model"
         i=1
         for m in "${MODEL_FILES[@]}"; do
-            echo -e "  ${CYAN}$i)${NC} 📦 Start ${GREEN}$(basename "$m" .gguf)${NC}"
+            echo -e "  ${CYAN}$i)${NC} Start ${GREEN}$(basename "$m" .gguf)${NC}"
             i=$((i+1))
         done
         echo -e ""
-        echo -e -n "👉 Select option [${CYAN}1${NC}]: "
+        echo -e -n "Select option [${CYAN}1${NC}]: "
         read -r mod_choice
         mod_choice=${mod_choice:-1}
         if [ "$mod_choice" = "0" ]; then

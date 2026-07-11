@@ -1,4 +1,4 @@
-# Local-Hermes-Portable
+<h1 align="center">Local-Hermes-Portable</h1>
 
 <p align="center">
   <strong>A premium, zero-configuration local AI inference & agentic workspace. Powered by hardware-accelerated GPU execution on Windows, macOS, and Linux.</strong>

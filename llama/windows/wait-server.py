@@ -4,6 +4,7 @@ import webbrowser
 import sys
 import os
 import re
+import urllib.parse
 
 if len(sys.argv) < 3:
     sys.exit(1)
@@ -11,13 +12,13 @@ if len(sys.argv) < 3:
 port = int(sys.argv[1])
 auto_launch = sys.argv[2].lower() == 'true'
 model_path = sys.argv[3] if len(sys.argv) > 3 else None
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
 # Auto-sync model path to Hermes config if provided
 if model_path:
     # Resolve project root from wait-server.py's location:
     # wait-server.py is in project_root/llama/windows/wait-server.py
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
     hermes_config = os.path.join(project_root, "hermes", "data", "config.yaml")
     
     # Replace backslashes with forward slashes for cross-platform compatibility in YAML
@@ -89,7 +90,17 @@ while count < 120:
     count += 1
 
 if auto_launch:
-    print(f"\nOpening Chat & Model Manager in your browser at http://localhost:{port}...")
-    webbrowser.open(f"http://localhost:{port}")
+    browser_url = f"http://localhost:{port}"
+    startup_prompt = os.path.join(project_root, "models", ".startup-prompt")
+    if os.path.isfile(startup_prompt) and os.path.getsize(startup_prompt) > 0:
+        try:
+            with open(startup_prompt, "r", encoding="utf-8") as stream:
+                prompt = stream.read()
+            browser_url = f"{browser_url}/?q={urllib.parse.quote(prompt)}#/"
+            os.remove(startup_prompt)
+        except Exception as exc:
+            print(f"Warning: could not attach first chat prompt: {exc}")
+    print(f"\nOpening Chat & Model Manager in your browser at {browser_url}...")
+    webbrowser.open(browser_url)
 else:
     print(f"\n====================================================\n  Server is ready!\n  Open http://localhost:{port} in your browser to use the Web UI\n====================================================\n")

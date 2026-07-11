@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Local Model Setup</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="enhancements.css">
+</head>
+<body>
+  <div class="glow"></div>
+  <main class="shell">
+    <header><div class="logo">L</div><div><strong>Local AI</strong><span>Private model setup</span></div><span class="source" id="source">Checking hardware</span></header>
+
+    <section class="view active center" id="loading">
+      <div class="spinner"></div><h1>Finding your best local model</h1><p>llmfit is checking your CPU, memory, and GPU.</p>
+    </section>
+
+    <section class="view" id="select">
+      <p class="eyebrow">Hardware detected</p><h1>Choose a model</h1>
+      <p class="lead">The first choice is the best balance of quality and speed for this computer.</p>
+      <div class="search"><input id="search-input" type="search" placeholder="Search models, e.g. Gemma, Qwen, Llama" maxlength="80" autocomplete="off"><button class="button primary" id="search-button">Search models</button><button class="button subtle hidden" id="clear-search">Show recommendations</button></div>
+      <p class="search-status" id="search-status">Search llmfit’s catalog and download any compatible GGUF model.</p>
+      <div class="specs" id="specs"></div>
+      <div class="models" id="models"></div>
+      <p class="score-help"><strong>Fit score:</strong> a score out of 100 combining model quality, estimated speed, memory fit, and usable context on this computer.</p>
+      <p class="note">Models download directly from Hugging Face and stay inside this portable folder.</p>
+    </section>
+
+    <section class="view" id="install">
+      <div class="install-head"><div class="download-icon">↓</div><div><p class="eyebrow" id="stage">Preparing</p><h1 id="install-title">Downloading your model</h1><p class="lead" id="message">Checking free space…</p></div></div>
+      <div class="progress" id="progress"><div class="progress-row"><span id="filename">Preparing</span><strong id="percent">0%</strong></div><div class="track"><div class="bar" id="bar"></div></div><div class="stats"><span id="size">Calculating size…</span><span id="speed"></span><span id="remaining"></span></div></div>
+      <div class="error hidden" id="error"><strong>Download stopped</strong><p id="error-text"></p><div><button class="button subtle" id="back">Choose another</button><button class="button primary" id="retry">Try again</button></div></div>
+    </section>
+
+    <section class="view center" id="success">
+      <div class="check">✓</div><p class="eyebrow">Ready</p><h1>Your local model is installed</h1><p>The Chat Server and Web UI will start when you continue.</p><div class="chosen" id="chosen"></div><div class="first-prompt"><label for="first-prompt">First chat prompt <span>optional</span></label><textarea id="first-prompt" maxlength="8000" placeholder="What would you like to ask in the new chat?"></textarea><small>This will start a new chat and send automatically when the Web UI opens.</small></div><button class="button primary finish" id="finish">Start Chat Server & Web UI</button><small>You can close this tab after the Web UI opens.</small>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

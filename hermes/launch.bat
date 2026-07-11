@@ -14,6 +14,7 @@ set "PORTABLE_ROOT=%~dp0"
 set "PORTABLE_ROOT=%PORTABLE_ROOT:~0,-1%"
 
 set "HERMES_HOME=%PORTABLE_ROOT%\data"
+if not defined GITHUB_SHA set "GITHUB_SHA=b699d27"
 set "CACHE_DIR=%PORTABLE_ROOT%\.cache"
 set "RUNTIME_DIR=%CACHE_DIR%\runtimes\windows-x64"
 set "SRC_DIR=%PORTABLE_ROOT%\src"

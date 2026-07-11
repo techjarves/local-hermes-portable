@@ -13,6 +13,7 @@ set -e
 # Resolve portable root (directory containing this script)
 PORTABLE_ROOT="$(cd "$(dirname "$0")" && pwd)"
 HERMES_HOME="$PORTABLE_ROOT/data"
+export GITHUB_SHA="${GITHUB_SHA:-b699d27}"
 CACHE_DIR="$PORTABLE_ROOT/.cache"
 SRC_DIR="$PORTABLE_ROOT/src"
 

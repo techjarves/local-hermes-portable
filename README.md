@@ -1,33 +1,86 @@
-# 🦙 local-hermes-portable
+# local-hermes-portable
 
-[![Platform: Windows | macOS | Linux](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square)](#-quick-start)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Engine: llama.cpp](https://img.shields.io/badge/engine-llama.cpp%20(CachyLLama)-orange?style=flat-square)](https://github.com/fewtarius/CachyLLama)
-[![Agent: Hermes v0.18](https://img.shields.io/badge/agent-Hermes%20v0.18-red?style=flat-square)](https://github.com/NousResearch/Hermes-Agent)
+<p align="center">
+  <strong>A premium, zero-configuration local AI inference & agentic workspace. Powered by hardware-accelerated GPU execution on Windows, macOS, and Linux.</strong>
+</p>
 
-A self-contained, plug-and-play local AI inference & agentic workspace that runs out-of-the-box on **Windows**, **macOS**, and **Linux** with **zero system-level dependencies**. 
+<p align="center">
+  <img src="https://img.shields.io/badge/Offline-100%25-green?style=for-the-badge&logo=offline" alt="100% Offline" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge" alt="Platforms" />
+  <img src="https://img.shields.io/badge/Engine-llama.cpp-orange?style=for-the-badge" alt="Engine" />
+  <img src="https://img.shields.io/badge/Agent-Hermes%20v0.18-red?style=for-the-badge" alt="Agent" />
+  <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
+</p>
 
-This suite bundles optimized local LLM inference engines (CachyLLama/llama.cpp) with the **Nous Research Hermes Agent** and **llmfit** diagnostics, preconfigured to run portably from any storage drive (including USB / exFAT partitions).
+<p align="center">
+  🎥 <strong>Watch the Setup & Demo Video:</strong> <a href="https://youtu.be/TWZv6fo3JLc">https://youtu.be/TWZv6fo3JLc</a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/TWZv6fo3JLc" target="_blank">
+    <img src="https://img.youtube.com/vi/TWZv6fo3JLc/maxresdefault.jpg" alt="Watch the Setup & Demo Video" width="800" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);" />
+  </a>
+</p>
 
 ---
 
-## 🚀 Quick Start
+## Table of Contents
+* [Key Features](#key-features)
+* [System Requirements](#system-requirements)
+* [Getting Started](#getting-started)
+* [Main Menu Options](#main-menu-options)
+* [Folder Architecture](#folder-architecture)
+* [Advanced Options](#advanced-options)
+* [License](#license)
+
+---
+
+## <a id="key-features"></a>Key Features
+
+*   **100% Offline & Private:** Zero internet, telemetry, cloud logging, or API keys required.
+*   **Zero-Install Portability:** Self-contained runtime (Python, llama.cpp binaries, and dependencies) running out of any storage drive.
+*   **Autonomous Hermes Agent:** Preconfigured Nous Research terminal coding agent with file editing and web tasks capabilities.
+*   **Auto-Configured Acceleration:** Auto-syncs launcher settings and offloads model layers to Vulkan/Metal compatible GPUs.
+*   **Optimal Resource Management:** Preconfigured with 8-bit quantized KV cache, 64K context limits, and timeout protection.
+*   **Guided Setup & Recovery:** Profiles hardware specs to download recommended GGUF models and cleans up zombie server instances.
+
+---
+
+## <a id="system-requirements"></a>System Requirements
+
+Since `local-hermes-portable` is fully self-contained, it does not require system-wide Python or Node.js installations. However, you will need:
+
+*   **Operating System:** 
+    *   **Windows:** Windows 10 / 11 (64-bit)
+    *   **macOS:** macOS 11.0 (Big Sur) or newer (Apple Silicon recommended, Intel supported)
+    *   **Linux:** Modern 64-bit kernel (Vulkan / ROCm compatible for GPU acceleration)
+*   **System Utilities:** `curl` and `tar` (pre-installed on most modern OS configurations, used for auto-bootstrapping runtime assets).
+*   **Hardware Recommendations:**
+    *   **RAM:** 8 GB minimum (16 GB or more recommended).
+    *   **Disk Space:** 5 GB to 15 GB of free space on your drive (depending on the size of the downloaded GGUF models).
+    *   **GPU Acceleration:**
+        *   *Windows/Linux:* Vulkan-compatible GPU (NVIDIA, AMD, or Intel) for hardware acceleration.
+        *   *macOS:* Apple Silicon (M-series chip) for Metal-accelerated inference.
+
+---
+
+## <a id="getting-started"></a>Getting Started
 
 To start, run the appropriate launcher script from the root of the project:
 
-### 🪟 Windows
+### Windows Setup
 ```powershell
 .\windows.bat
 ```
 *   **What it does:** Automatically bootstraps a portable Python environment, installs VC++ Redistributable and llama.cpp Vulkan precompiled binaries if needed, and launches the interactive menu.
 
-### 🍏 macOS
+### macOS Setup
 ```bash
 ./mac.sh
 ```
 *   **What it does:** Auto-detects Apple Silicon/Intel hardware, configures portable Python, and launches the server with Metal-accelerated binaries.
 
-### 🐧 Linux
+### Linux Setup
 ```bash
 ./linux.sh
 ```
@@ -35,7 +88,7 @@ To start, run the appropriate launcher script from the root of the project:
 
 ---
 
-## 🛠️ Main Menu Options
+## <a id="main-menu-options"></a>Main Menu Options
 
 When you run a launcher, you're presented with a terminal dashboard:
 
@@ -55,21 +108,7 @@ Choose an action:
 
 ---
 
-## ✨ Core Features
-
-*   **Integrated Hermes Agent (Nous Research):** Ready-to-go terminal coding agent with capabilities for file editing, web browsing, code execution, and subagent delegation.
-*   **Auto-Syncing Configuration:** The server launcher automatically updates the Hermes configuration (`config.yaml`) with the active model's path, setting up the `llamacpp` provider with no manual editing required.
-*   **Memory & Performance Optimizations:**
-    *   **GPU Acceleration (`-ngl 99`):** Automatically offloads model layers to Vulkan/Metal compatible GPUs, boosting prompt prefill speeds up to 50x compared to CPU execution.
-    *   **Single-Slot Restricting (`-np 1`):** Limits parallel server slots to 1 for agent chats, saving up to 75% of KV cache memory.
-    *   **8-bit Quantized KV Cache (`--cache-type-k q8_0 --cache-type-v q8_0`):** Compresses key-value storage, keeping RAM usage low and avoiding system disk swapping.
-    *   **Context & Timeout Management:** Caps repository context file loads (e.g. `AGENTS.md`) to 5,000 characters to ensure sub-10 second prompt evaluations, and extends client timeouts to 10 minutes (`600s`) to prevent connection timeouts during heavy reasoning workloads.
-*   **Guided Zero-Model Startup:** If no complete GGUF exists, the launcher asks before opening a focused llmfit-powered model setup page. Downloads are resumable, stay in `models/`, and multi-part models are only offered to the server after every shard is complete.
-*   **Process Protection:** The script automatically finds and kills zombie background processes (like lingering `llama-server.exe` instances) on startup to prevent port collisions.
-
----
-
-## 📂 Project Layout
+## <a id="folder-architecture"></a>Folder Architecture
 
 The repository keeps a clean, multi-platform file structure:
 
@@ -90,7 +129,7 @@ local-hermes-portable/
 
 ---
 
-## 📚 Advanced Options
+## <a id="advanced-options"></a>Advanced Options
 
 You can configure environment variables to override launcher defaults:
 
@@ -103,7 +142,7 @@ You can configure environment variables to override launcher defaults:
 
 ---
 
-## 📝 License
+## <a id="license"></a>License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 All bundled components (llama.cpp, Hermes Agent, llmfit) are property of their respective creators and licensed under their original open-source terms.
